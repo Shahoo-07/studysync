@@ -1,0 +1,49 @@
+import axios from 'axios';
+import { useAuthStore } from '../store/auth';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+const api = axios.create({
+  baseURL: `${API_URL}/api`,
+});
+
+// Add token to requests
+api.interceptors.request.use((config) => {
+  const { accessToken } = useAuthStore.getState();
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
+  }
+  return config;
+});
+
+// Handle token refresh
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const { refreshToken } = useAuthStore.getState();
+        const response = await axios.post(`${API_URL}/api/auth/refresh`, {
+          refreshToken,
+        });
+
+        const { accessToken, refreshToken: newRefreshToken } = response.data;
+        useAuthStore.getState().setTokens(accessToken, newRefreshToken, null);
+
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        return api(originalRequest);
+      } catch (err) {
+        useAuthStore.getState().logout();
+        window.location.href = '/login';
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+export default api;
