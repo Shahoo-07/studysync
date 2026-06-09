@@ -22,7 +22,8 @@ import {
   Bell,
   Info,
   ExternalLink,
-  MessageSquare
+  MessageSquare,
+  X
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
