@@ -12,7 +12,7 @@ export const getFriends = async (req, res) => {
          CASE
            WHEN requester_id = $1 THEN addressee_id
            ELSE requester_id
-         END as friendId,
+         END as "friendId",
          u.name,
          u.email,
          u.avatar_url,

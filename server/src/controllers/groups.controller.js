@@ -270,8 +270,8 @@ export const getGroupLeaderboard = async (req, res) => {
          u.id,
          u.name,
          u.avatar_url,
-         COUNT(DISTINCT t.id) as totalTopics,
-         SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) as doneTopics,
+         COUNT(DISTINCT t.id) as "totalTopics",
+         SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) as "doneTopics",
          ROUND(100.0 * SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) /
            NULLIF(COUNT(DISTINCT t.id), 0)) as percentage
        FROM group_members gm

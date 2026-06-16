@@ -17,7 +17,7 @@ export const getChapters = async (req, res) => {
     }
 
     const result = await pool.query(
-      `SELECT id, name, order_index, created_at
+      `SELECT id, name, status, order_index, created_at
        FROM chapters
        WHERE subject_id = $1
        ORDER BY order_index`,
@@ -62,7 +62,7 @@ export const createChapter = async (req, res) => {
     const result = await pool.query(
       `INSERT INTO chapters (id, subject_id, name, order_index)
        VALUES ($1, $2, $3, $4)
-       RETURNING id, name, order_index, created_at`,
+       RETURNING id, name, status, order_index, created_at`,
       [id, subjectId, name, orderIndex]
     );
 
@@ -77,7 +77,11 @@ export const updateChapter = async (req, res) => {
   try {
     const { id } = req.params;
     const { userId } = req;
-    const { name } = req.body;
+    const { name, status } = req.body;
+    
+    if (status && !['not_started', 'in_progress', 'done', 'revision_needed'].includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
 
     // Verify ownership
     const chapter = await pool.query(
@@ -92,9 +96,12 @@ export const updateChapter = async (req, res) => {
     }
 
     const result = await pool.query(
-      `UPDATE chapters SET name = COALESCE($1, name) WHERE id = $2
-       RETURNING id, name, order_index, created_at`,
-      [name, id]
+      `UPDATE chapters
+       SET name = COALESCE($1, name),
+           status = COALESCE($2, status)
+       WHERE id = $3
+       RETURNING id, name, status, order_index, created_at`,
+      [name, status, id]
     );
 
     res.json(result.rows[0]);

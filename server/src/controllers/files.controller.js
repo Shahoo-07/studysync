@@ -77,7 +77,7 @@ export const getSharedFiles = async (req, res) => {
          f.mime_type,
          f.size_bytes,
          f.uploader_id,
-         u.name as uploaderName,
+         u.name as "uploaderName",
          fp.permission,
          fp.grantee_group_id as "groupId",
          f.created_at

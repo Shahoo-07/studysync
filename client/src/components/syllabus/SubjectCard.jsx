@@ -79,7 +79,7 @@ export default function SubjectCard({ subjectId }) {
       {chapters.map((chapter) => (
         <div key={chapter.id} className="border-l-2 border-tan pl-4">
           <div className="flex items-center justify-between">
-            <ChapterAccordion chapterId={chapter.id} name={chapter.name} />
+            <ChapterAccordion chapterId={chapter.id} name={chapter.name} status={chapter.status} subjectId={subjectId} />
             <Button
               variant="ghost"
               size="sm"

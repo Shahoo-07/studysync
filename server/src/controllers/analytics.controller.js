@@ -38,8 +38,8 @@ export const getStreak = async (req, res) => {
 
     const result = await pool.query(
       `SELECT
-         streak_count as currentStreak,
-         last_active_date
+         streak_count as "currentStreak",
+         last_active_date as "lastActiveDate"
        FROM users
        WHERE id = $1`,
       [userId]

@@ -22,8 +22,8 @@ export const subjectsService = {
   createChapter: (subjectId, name) =>
     api.post(`/chapters/subject/${subjectId}`, { name }),
 
-  updateChapter: (id, name) =>
-    api.patch(`/chapters/${id}`, { name }),
+  updateChapter: (id, updates) =>
+    api.patch(`/chapters/${id}`, updates),
 
   deleteChapter: (id) => api.delete(`/chapters/${id}`),
 

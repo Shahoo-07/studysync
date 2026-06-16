@@ -11,7 +11,7 @@ export const getFriendLeaderboard = async (req, res) => {
          CASE
            WHEN requester_id = $1 THEN addressee_id
            ELSE requester_id
-         END as friendId
+         END as "friendId"
        FROM friendships
        WHERE status = 'accepted'
        AND (requester_id = $1 OR addressee_id = $1)`,
@@ -30,8 +30,8 @@ export const getFriendLeaderboard = async (req, res) => {
            u.id,
            u.name,
            u.avatar_url,
-           COUNT(DISTINCT t.id) as totalTopics,
-           SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) as doneTopics,
+           COUNT(DISTINCT t.id) as "totalTopics",
+           SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) as "doneTopics",
            ROUND(100.0 * SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) /
              NULLIF(COUNT(DISTINCT t.id), 0)) as percentage
          FROM users u
@@ -50,8 +50,8 @@ export const getFriendLeaderboard = async (req, res) => {
            u.id,
            u.name,
            u.avatar_url,
-           COUNT(DISTINCT t.id) as totalTopics,
-           SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) as doneTopics,
+           COUNT(DISTINCT t.id) as "totalTopics",
+           SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) as "doneTopics",
            ROUND(100.0 * SUM(CASE WHEN t.status = 'done' THEN 1 ELSE 0 END) /
              NULLIF(COUNT(DISTINCT t.id), 0)) as percentage
          FROM users u

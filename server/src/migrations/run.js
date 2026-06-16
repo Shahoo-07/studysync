@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS chapters (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   subject_id UUID REFERENCES subjects(id) ON DELETE CASCADE NOT NULL,
   name VARCHAR(200) NOT NULL,
+  status VARCHAR(20) DEFAULT 'not_started',
   order_index INT DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -156,6 +157,9 @@ CREATE INDEX IF NOT EXISTS idx_group_members_user ON group_members(user_id);
 CREATE INDEX IF NOT EXISTS idx_files_uploader ON files(uploader_id);
 CREATE INDEX IF NOT EXISTS idx_files_subject ON files(subject_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
+
+-- Alter table to add status to chapters if it doesn't exist
+ALTER TABLE chapters ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'not_started';
 `;
 
 const runMigrations = async () => {
