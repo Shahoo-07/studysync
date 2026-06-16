@@ -643,13 +643,13 @@ export default function Groups() {
               Join Study Group
             </h3>
             <p className="text-xs text-brown-dark mb-4">
-              Enter the 6-character alphanumeric invite code shared by the group admin.
+              Enter the alphanumeric invite code shared by the group admin.
             </p>
             <form onSubmit={handleJoinGroup} className="space-y-4">
               <Input
                 required
-                maxLength={6}
-                placeholder="ENTER CODE (e.g., A1B2C3)"
+                maxLength={10}
+                placeholder="ENTER CODE (e.g., MATH123)"
                 value={inviteCodeInput}
                 onChange={(e) => setInviteCodeInput(e.target.value)}
                 className="text-center font-bold tracking-widest text-base uppercase"

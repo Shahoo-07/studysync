@@ -4,6 +4,7 @@ import { useDropzone } from 'react-dropzone';
 import { filesService } from '../services/files.service';
 import { friendsService } from '../services/friends.service';
 import { subjectsService } from '../services/subjects.service';
+import { groupsService } from '../services/groups.service';
 import Navbar from '../components/layout/Navbar';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -22,7 +23,8 @@ import {
   Users,
   HardDrive,
   Info,
-  Clock
+  Clock,
+  X
 } from 'lucide-react';
 import { format } from 'date-fns';
 

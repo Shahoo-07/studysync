@@ -133,7 +133,7 @@ export const joinGroup = async (req, res) => {
 
     // Check if already a member
     const existing = await pool.query(
-      'SELECT id FROM group_members WHERE group_id = $1 AND user_id = $2',
+      'SELECT role FROM group_members WHERE group_id = $1 AND user_id = $2',
       [groupId, userId]
     );
 

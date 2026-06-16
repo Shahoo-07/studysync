@@ -8,7 +8,7 @@ export const getTopics = async (req, res) => {
 
     // Verify ownership
     const chapter = await pool.query(
-      `SELECT c.* FROM chapters c
+      `SELECT c.*, s.user_id FROM chapters c
        INNER JOIN subjects s ON c.subject_id = s.id
        WHERE c.id = $1`,
       [chapterId]
@@ -41,7 +41,7 @@ export const createTopic = async (req, res) => {
 
     // Verify ownership
     const chapter = await pool.query(
-      `SELECT c.* FROM chapters c
+      `SELECT c.*, s.user_id FROM chapters c
        INNER JOIN subjects s ON c.subject_id = s.id
        WHERE c.id = $1`,
       [chapterId]
@@ -85,7 +85,7 @@ export const updateTopic = async (req, res) => {
 
     // Verify ownership
     const topic = await pool.query(
-      `SELECT t.* FROM topics t
+      `SELECT t.*, s.user_id FROM topics t
        INNER JOIN chapters c ON t.chapter_id = c.id
        INNER JOIN subjects s ON c.subject_id = s.id
        WHERE t.id = $1`,
@@ -124,7 +124,7 @@ export const updateTopicStatus = async (req, res) => {
 
     // Verify ownership
     const topic = await pool.query(
-      `SELECT t.* FROM topics t
+      `SELECT t.*, s.user_id FROM topics t
        INNER JOIN chapters c ON t.chapter_id = c.id
        INNER JOIN subjects s ON c.subject_id = s.id
        WHERE t.id = $1`,
@@ -187,7 +187,7 @@ export const deleteTopic = async (req, res) => {
 
     // Verify ownership
     const topic = await pool.query(
-      `SELECT t.* FROM topics t
+      `SELECT t.*, s.user_id FROM topics t
        INNER JOIN chapters c ON t.chapter_id = c.id
        INNER JOIN subjects s ON c.subject_id = s.id
        WHERE t.id = $1`,
@@ -215,7 +215,7 @@ export const reorderTopics = async (req, res) => {
 
     // Verify ownership
     const chapter = await pool.query(
-      `SELECT c.* FROM chapters c
+      `SELECT c.*, s.user_id FROM chapters c
        INNER JOIN subjects s ON c.subject_id = s.id
        WHERE c.id = $1`,
       [chapterId]

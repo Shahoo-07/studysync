@@ -81,7 +81,7 @@ export const updateChapter = async (req, res) => {
 
     // Verify ownership
     const chapter = await pool.query(
-      `SELECT c.* FROM chapters c
+      `SELECT c.*, s.user_id FROM chapters c
        INNER JOIN subjects s ON c.subject_id = s.id
        WHERE c.id = $1`,
       [id]
@@ -111,7 +111,7 @@ export const deleteChapter = async (req, res) => {
 
     // Verify ownership
     const chapter = await pool.query(
-      `SELECT c.* FROM chapters c
+      `SELECT c.*, s.user_id FROM chapters c
        INNER JOIN subjects s ON c.subject_id = s.id
        WHERE c.id = $1`,
       [id]
