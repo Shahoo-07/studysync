@@ -68,9 +68,9 @@ export const getFiles = async (req, res) => {
 export const getSharedFiles = async (req, res) => {
   try {
     const { userId } = req;
+    const { groupId } = req.query;
 
-    const result = await pool.query(
-      `SELECT DISTINCT ON (f.id)
+    let query = `SELECT DISTINCT ON (f.id)
          f.id,
          f.name,
          f.original_name,
@@ -83,13 +83,24 @@ export const getSharedFiles = async (req, res) => {
          f.created_at
        FROM files f
        INNER JOIN file_permissions fp ON f.id = fp.file_id
-       INNER JOIN users u ON f.uploader_id = u.id
-       WHERE fp.grantee_user_id = $1 OR fp.grantee_group_id IN (
-         SELECT group_id FROM group_members WHERE user_id = $1
-       )
-       ORDER BY f.id, f.created_at DESC`,
-      [userId]
-    );
+       INNER JOIN users u ON f.uploader_id = u.id`;
+
+    const params = [userId];
+
+    if (groupId) {
+      query += ` WHERE fp.grantee_group_id = $2 AND EXISTS (
+        SELECT 1 FROM group_members WHERE group_id = $2 AND user_id = $1
+      )`;
+      params.push(groupId);
+    } else {
+      query += ` WHERE fp.grantee_user_id = $1 OR fp.grantee_group_id IN (
+        SELECT group_id FROM group_members WHERE user_id = $1
+      )`;
+    }
+
+    query += ` ORDER BY f.id, f.created_at DESC`;
+
+    const result = await pool.query(query, params);
 
     res.json(result.rows);
   } catch (err) {

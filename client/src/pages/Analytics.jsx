@@ -171,7 +171,7 @@ export default function Analytics() {
               <div className="grid grid-flow-col grid-rows-7 gap-1.5 w-max">
                 {heatmapDays.map((day, idx) => {
                   const dateStr = format(day, 'yyyy-MM-dd');
-                  const count = heatmap[dateStr] || 0;
+                  const count = Number(heatmap[dateStr] || 0);
                   
                   // Color scale based on session count
                   let colorClass = 'bg-cream-100 border border-cream-200';

@@ -17,14 +17,18 @@ export default function Home() {
   const [expandedChapters, setExpandedChapters] = useState({});
   const [newSubjectName, setNewSubjectName] = useState('');
   const [showNewSubject, setShowNewSubject] = useState(false);
-  const [selectedColor, setSelectedColor] = useState('#E8DDD0');
+  const [selectedColor, setSelectedColor] = useState('#FFADAD');
 
   const colors = [
-    '#E8DDD0',
-    '#8B6E52',
-    '#D9C5B0',
-    '#A18063',
-    '#C9B5A0',
+    '#FFADAD', // Pastel Pink
+    '#FFD6A5', // Pastel Orange
+    '#FDFFB6', // Pastel Yellow
+    '#CAFFBF', // Pastel Light Green
+    '#9BF6FF', // Pastel Cyan
+    '#A0C4FF', // Pastel Blue
+    '#BDB2FF', // Pastel Purple
+    '#FFC6FF', // Pastel Lavender
+    '#C1F0E9', // Pastel Mint/Teal
   ];
 
   // Fetch subjects
@@ -128,7 +132,7 @@ export default function Home() {
               <label className="block text-sm font-medium text-brown-text mb-2">
                 Color
               </label>
-              <div className="flex gap-2">
+              <div className="grid grid-cols-3 gap-2 w-max">
                 {colors.map((color) => (
                   <button
                     key={color}

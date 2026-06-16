@@ -12,4 +12,7 @@ export const authService = {
 
   logout: () =>
     api.post('/auth/logout'),
+
+  getProfile: () =>
+    api.get('/auth/profile'),
 };

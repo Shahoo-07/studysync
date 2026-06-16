@@ -12,20 +12,65 @@ export const logSession = async (req, res) => {
 
     const id = uuidv4();
 
-    const result = await pool.query(
-      `INSERT INTO study_sessions (id, user_id, topic_id, subject_id, duration_minutes, session_date)
-       VALUES ($1, $2, $3, $4, $5, CURRENT_DATE)
-       RETURNING id, created_at`,
-      [id, userId, topicId || null, subjectId || null, durationMinutes]
-    );
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
 
-    // Update user's last_active_date
-    await pool.query(
-      'UPDATE users SET last_active_date = CURRENT_DATE WHERE id = $1',
-      [userId]
-    );
+      const result = await client.query(
+        `INSERT INTO study_sessions (id, user_id, topic_id, subject_id, duration_minutes, session_date)
+         VALUES ($1, $2, $3, $4, $5, CURRENT_DATE)
+         RETURNING id, created_at`,
+        [id, userId, topicId || null, subjectId || null, durationMinutes]
+      );
 
-    res.status(201).json(result.rows[0]);
+      // Fetch user's current streak and last active date in DB timezone
+      const userRes = await client.query(
+        `SELECT 
+           TO_CHAR(last_active_date, 'YYYY-MM-DD') as last_active_date_str, 
+           streak_count 
+         FROM users 
+         WHERE id = $1`,
+        [userId]
+      );
+
+      const user = userRes.rows[0];
+      let newStreak = user.streak_count || 0;
+      const lastActiveStr = user.last_active_date_str;
+
+      // Fetch today and yesterday in DB timezone
+      const dateQuery = await client.query(
+        "SELECT TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD') as today, TO_CHAR(CURRENT_DATE - INTERVAL '1 day', 'YYYY-MM-DD') as yesterday"
+      );
+      const { today, yesterday } = dateQuery.rows[0];
+
+      if (!lastActiveStr) {
+        // First session ever
+        newStreak = 1;
+      } else if (lastActiveStr === today) {
+        // Already active today, streak remains same
+      } else if (lastActiveStr === yesterday) {
+        // Active yesterday, increment streak
+        newStreak += 1;
+      } else {
+        // Streak broken, reset to 1
+        newStreak = 1;
+      }
+
+      // Update user's last_active_date and streak_count
+      await client.query(
+        'UPDATE users SET last_active_date = CURRENT_DATE, streak_count = $1 WHERE id = $2',
+        [newStreak, userId]
+      );
+
+      await client.query('COMMIT');
+
+      res.status(201).json(result.rows[0]);
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
   } catch (err) {
     console.error('Log session error:', err);
     res.status(500).json({ error: 'Failed to log session' });
@@ -36,10 +81,16 @@ export const getStreak = async (req, res) => {
   try {
     const { userId } = req;
 
+    // Get today and yesterday in database timezone
+    const dateQuery = await pool.query(
+      "SELECT TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD') as today, TO_CHAR(CURRENT_DATE - INTERVAL '1 day', 'YYYY-MM-DD') as yesterday"
+    );
+    const { today, yesterday } = dateQuery.rows[0];
+
     const result = await pool.query(
       `SELECT
-         streak_count as "currentStreak",
-         last_active_date as "lastActiveDate"
+         streak_count,
+         TO_CHAR(last_active_date, 'YYYY-MM-DD') as "lastActiveDate"
        FROM users
        WHERE id = $1`,
       [userId]
@@ -50,27 +101,18 @@ export const getStreak = async (req, res) => {
     }
 
     const user = result.rows[0];
-    let currentStreak = user.currentStreak || 0;
+    let currentStreak = user.streak_count || 0;
+    const lastActiveDateStr = user.lastActiveDate;
 
-    // Check if streak should be reset
-    const lastActiveDate = user.lastActiveDate ? new Date(user.lastActiveDate) : null;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (lastActiveDate) {
-      const lastActive = new Date(lastActiveDate);
-      lastActive.setHours(0, 0, 0, 0);
-
-      const daysDiff = Math.floor((today - lastActive) / (1000 * 60 * 60 * 24));
-
-      if (daysDiff > 1) {
-        currentStreak = 0;
-      }
+    // Check if streak should be reset (if last study date is neither today nor yesterday)
+    if (lastActiveDateStr && lastActiveDateStr !== today && lastActiveDateStr !== yesterday) {
+      currentStreak = 0;
+      await pool.query('UPDATE users SET streak_count = 0 WHERE id = $1', [userId]);
     }
 
     res.json({
       currentStreak,
-      lastActiveDate: user.lastActiveDate,
+      lastActiveDate: lastActiveDateStr,
     });
   } catch (err) {
     console.error('Get streak error:', err);
@@ -85,9 +127,9 @@ export const getHeatmap = async (req, res) => {
 
     const result = await pool.query(
       `SELECT
-         session_date,
-         COUNT(*) as sessionCount,
-         SUM(duration_minutes) as totalDuration
+         TO_CHAR(session_date, 'YYYY-MM-DD') as "sessionDate",
+         COUNT(*) as "sessionCount",
+         SUM(duration_minutes) as "totalDuration"
        FROM study_sessions
        WHERE user_id = $1
        AND session_date >= CURRENT_DATE - INTERVAL '1 day' * $2
@@ -96,18 +138,34 @@ export const getHeatmap = async (req, res) => {
       [userId, days]
     );
 
-    // Create heatmap data
+    // Get today's date in database timezone
+    const dateQuery = await pool.query(
+      "SELECT TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD') as today"
+    );
+    const todayStr = dateQuery.rows[0].today;
+    const [year, month, day] = todayStr.split('-').map(Number);
+
+    // Helper to format local date components
+    const formatDateLocal = (date) => {
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const dd = String(date.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    };
+
+    // Create heatmap data starting from database's CURRENT_DATE
     const heatmapData = {};
     for (let i = 0; i < days; i++) {
-      const date = new Date();
+      const date = new Date(year, month - 1, day);
       date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = formatDateLocal(date);
       heatmapData[dateStr] = 0;
     }
 
     result.rows.forEach((row) => {
-      const dateStr = new Date(row.session_date).toISOString().split('T')[0];
-      heatmapData[dateStr] = row.sessionCount;
+      if (heatmapData[row.sessionDate] !== undefined) {
+        heatmapData[row.sessionDate] = parseInt(row.sessionCount, 10);
+      }
     });
 
     res.json(heatmapData);
@@ -141,7 +199,12 @@ export const getWeakAreas = async (req, res) => {
       [userId]
     );
 
-    res.json(result.rows);
+    const rows = result.rows.map((row) => ({
+      ...row,
+      sessionCount: parseInt(row.sessionCount, 10),
+    }));
+
+    res.json(rows);
   } catch (err) {
     console.error('Get weak areas error:', err);
     res.status(500).json({ error: 'Failed to fetch weak areas' });

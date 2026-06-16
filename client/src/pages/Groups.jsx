@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { groupsService } from '../services/groups.service';
 import { filesService } from '../services/files.service';
@@ -30,6 +31,7 @@ import { format, parseISO } from 'date-fns';
 export default function Groups() {
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((state) => state.user);
+  const navigate = useNavigate();
   
   const [selectedGroupId, setSelectedGroupId] = useState(null);
   
@@ -74,13 +76,12 @@ export default function Groups() {
     enabled: !!selectedGroupId,
   });
 
-  // Fetch all shared files to filter for this group
-  const { data: sharedFiles = [] } = useQuery({
-    queryKey: ['shared-files'],
-    queryFn: () => filesService.getSharedFiles().then((r) => r.data),
+  // Fetch shared files for this group
+  const { data: groupFiles = [] } = useQuery({
+    queryKey: ['group-files', selectedGroupId],
+    queryFn: () => filesService.getSharedFiles(selectedGroupId).then((r) => r.data),
     enabled: !!selectedGroupId,
   });
-  const groupFiles = sharedFiles.filter((f) => f.groupId === selectedGroupId);
 
   // Initialize Socket.io connection for real-time room updates
   const socket = useSocket(selectedGroupId);
@@ -478,7 +479,7 @@ export default function Groups() {
                     <h3 className="text-xl font-serif font-bold text-brown">
                       Shared Materials
                     </h3>
-                    <Button variant="outline" size="sm" onClick={() => navigate('/files')} className="text-xs">
+                    <Button variant="outline" size="sm" onClick={() => navigate('/files', { state: { groupId: selectedGroupId } })} className="text-xs">
                       Share new notes
                     </Button>
                   </div>

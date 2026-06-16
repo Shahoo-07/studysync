@@ -6,7 +6,7 @@ import { authService } from '../../services/auth.service';
 import { notificationsService } from '../../services/notifications.service';
 import { useSocket } from '../../hooks/useSocket';
 import { Button } from '../ui/Button';
-import { Bell, Mail, BookOpen, FileCheck, X, Check } from 'lucide-react';
+import { Bell, Mail, BookOpen, FileCheck, X, Check, Flame, Calendar, LogOut, ChevronDown } from 'lucide-react';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 
 export default function Navbar() {
@@ -15,9 +15,18 @@ export default function Navbar() {
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const dropdownRef = useRef(null);
+  const profileDropdownRef = useRef(null);
 
   const socket = useSocket();
+
+  // Fetch user profile info
+  const { data: profile } = useQuery({
+    queryKey: ['profile'],
+    queryFn: () => authService.getProfile().then((r) => r.data),
+    enabled: !!user,
+  });
 
   // Fetch notifications
   const { data: notifications = [] } = useQuery({
@@ -47,11 +56,14 @@ export default function Navbar() {
     };
   }, [socket, queryClient]);
 
-  // Click outside to close dropdown
+  // Click outside to close dropdowns
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowNotifications(false);
+      }
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
+        setShowProfileDropdown(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -248,17 +260,73 @@ export default function Navbar() {
             )}
           </div>
 
-          <div className="flex items-center gap-3 ml-2 pl-4 border-l border-tan">
-            <span className="text-sm font-medium text-brown max-w-[80px] truncate">
-              {user?.name}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
+          <div className="relative flex items-center gap-3 ml-2 pl-4 border-l border-tan" ref={profileDropdownRef}>
+            <button
+              onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+              className="flex items-center gap-2 text-sm font-semibold text-brown hover:text-brown-dark transition-colors focus:outline-none"
             >
-              Logout
-            </Button>
+              <div className="w-8 h-8 rounded-full bg-cream-200 border border-tan flex items-center justify-center text-brown text-sm font-bold uppercase">
+                {user?.name ? user.name.charAt(0) : 'U'}
+              </div>
+              <span className="max-w-[100px] truncate">
+                {user?.name}
+              </span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${showProfileDropdown ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showProfileDropdown && (
+              <div className="absolute right-0 mt-3 top-full w-72 bg-cream-50 rounded-xl border border-tan shadow-xl overflow-hidden z-50 animate-fade-in p-4">
+                <div className="flex flex-col items-center border-b border-tan pb-3 mb-3">
+                  <div className="w-16 h-16 rounded-full bg-cream-200 border border-tan flex items-center justify-center text-brown text-2xl font-bold uppercase mb-2">
+                    {user?.name ? user.name.charAt(0) : 'U'}
+                  </div>
+                  <h3 className="font-serif font-bold text-brown text-lg text-center truncate w-full">
+                    {profile?.name || user?.name}
+                  </h3>
+                  <p className="text-xs text-brown-dark/80 text-center truncate w-full">
+                    {profile?.email || user?.email}
+                  </p>
+                </div>
+
+                <div className="space-y-2.5 mb-4">
+                  <div className="flex items-center justify-between text-xs py-1 border-b border-cream-100">
+                    <span className="text-brown-dark font-medium flex items-center gap-1.5">
+                      <Flame className="w-4 h-4 text-orange-500 fill-orange-500 animate-pulse" />
+                      Study Streak
+                    </span>
+                    <span className="font-bold text-brown">
+                      {profile?.streak_count ?? 0} days
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs py-1 border-b border-cream-100">
+                    <span className="text-brown-dark font-medium flex items-center gap-1.5">
+                      <Calendar className="w-4 h-4 text-brown" />
+                      Joined
+                    </span>
+                    <span className="font-semibold text-brown-dark">
+                      {profile?.created_at
+                        ? new Date(profile.created_at).toLocaleDateString(undefined, {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                          })
+                        : 'N/A'}
+                    </span>
+                  </div>
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-center flex items-center gap-1.5 border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 transition-colors"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>

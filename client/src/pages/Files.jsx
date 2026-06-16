@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDropzone } from 'react-dropzone';
 import { filesService } from '../services/files.service';
@@ -30,6 +31,9 @@ import { format } from 'date-fns';
 
 export default function Files() {
   const queryClient = useQueryClient();
+  const location = useLocation();
+  const initialGroupId = location.state?.groupId || '';
+
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [currentFolderName, setCurrentFolderName] = useState('My Drive');
   const [folderHistory, setFolderHistory] = useState([]); // Array of { id, name }
@@ -47,6 +51,13 @@ export default function Files() {
   const [linkedSubjectId, setLinkedSubjectId] = useState('');
   const [fileDescription, setFileDescription] = useState('');
   const [uploadProgress, setUploadProgress] = useState(null);
+  const [uploadGroupId, setUploadGroupId] = useState(initialGroupId);
+
+  useEffect(() => {
+    if (location.state?.groupId) {
+      setUploadGroupId(location.state.groupId);
+    }
+  }, [location.state?.groupId]);
 
   // Tab filter: 'my-drive' | 'shared-with-me'
   const [activeTab, setActiveTab] = useState('my-drive');
@@ -151,16 +162,28 @@ export default function Files() {
     
     setUploadProgress('Uploading...');
     try {
-      await filesService.uploadFile(
+      const response = await filesService.uploadFile(
         file,
         linkedSubjectId || null,
         currentFolderId || null,
         fileDescription || null
       );
+      
+      const uploadedFile = response.data;
+      if (uploadGroupId) {
+        await filesService.shareFile(uploadedFile.id, [], [uploadGroupId], 'download');
+      }
+
       queryClient.invalidateQueries({ queryKey: ['files', currentFolderId, activeTab] });
       setFileDescription('');
       setLinkedSubjectId('');
-      setUploadProgress('Upload complete!');
+      setUploadGroupId('');
+      
+      if (uploadGroupId) {
+        setUploadProgress('Upload complete and shared with group!');
+      } else {
+        setUploadProgress('Upload complete!');
+      }
       setTimeout(() => setUploadProgress(null), 2500);
     } catch (err) {
       console.error('Upload error:', err);
@@ -328,7 +351,7 @@ export default function Files() {
                 </div>
 
                 {/* Upload metadata attachments */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs uppercase font-bold text-brown-dark mb-1">
                       Link to Subject (Optional)
@@ -342,6 +365,24 @@ export default function Files() {
                       {subjects.map((sub) => (
                         <option key={sub.id} value={sub.id}>
                           {sub.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs uppercase font-bold text-brown-dark mb-1">
+                      Share with Group (Optional)
+                    </label>
+                    <select
+                      value={uploadGroupId}
+                      onChange={(e) => setUploadGroupId(e.target.value)}
+                      className="w-full px-2 py-1.5 border border-tan rounded-lg text-xs bg-cream-50 focus:ring-1 focus:ring-brown focus:outline-none"
+                    >
+                      <option value="">Just for myself</option>
+                      {groups.map((group) => (
+                        <option key={group.id} value={group.id}>
+                          {group.name}
                         </option>
                       ))}
                     </select>

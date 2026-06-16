@@ -19,8 +19,8 @@ export const filesService = {
   getFiles: (folderId) =>
     api.get('/files', { params: { folderId } }),
 
-  getSharedFiles: () =>
-    api.get('/files/shared-with-me'),
+  getSharedFiles: (groupId) =>
+    api.get('/files/shared-with-me', { params: { groupId } }),
 
   downloadFile: (fileId) =>
     api.get(`/files/${fileId}/download`),
