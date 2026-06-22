@@ -109,7 +109,7 @@ export default function Friends() {
     <div className="min-h-screen bg-cream-50 text-brown-text font-sans">
       <Navbar />
 
-      <div className="max-w-6xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-6">
         <div className="mb-8">
           <h1 className="text-4xl font-serif font-bold text-brown mb-2">
             Social Accountability
@@ -439,33 +439,33 @@ function FriendCard({ friend, myVisibilityLevel, onUpdateVisibility, onRemove })
             </div>
 
             <div className="min-w-0">
-              <h4 className="font-serif font-bold text-brown text-base truncate">{friend.name}</h4>
-              <p className="text-xs text-brown-dark truncate">{friend.email}</p>
+              <h4 className="font-serif font-bold text-brown text-lg truncate">{friend.name}</h4>
+              <p className="text-sm text-brown-dark truncate">{friend.email}</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             {/* Progress Circular visual representation */}
-            <div className="w-10 h-10 relative flex items-center justify-center">
+            <div className="w-12 h-12 relative flex items-center justify-center">
               <svg className="w-full h-full transform -rotate-90">
                 <circle
-                  cx="20"
-                  cy="20"
-                  r="16"
+                  cx="24"
+                  cy="24"
+                  r="20"
                   className="stroke-cream-200 fill-none"
                   strokeWidth="3.5"
                 />
                 <circle
-                  cx="20"
-                  cy="20"
-                  r="16"
+                  cx="24"
+                  cy="24"
+                  r="20"
                   className="stroke-brown fill-none transition-all duration-500"
                   strokeWidth="3.5"
-                  strokeDasharray={`${2 * Math.PI * 16}`}
-                  strokeDashoffset={`${2 * Math.PI * 16 * (1 - totalPercentage / 100)}`}
+                  strokeDasharray={`${2 * Math.PI * 20}`}
+                  strokeDashoffset={`${2 * Math.PI * 20 * (1 - totalPercentage / 100)}`}
                 />
               </svg>
-              <span className="text-[10px] font-bold absolute text-brown-text">
+              <span className="text-xs font-bold absolute text-brown-text">
                 {totalPercentage}%
               </span>
             </div>
@@ -475,7 +475,7 @@ function FriendCard({ friend, myVisibilityLevel, onUpdateVisibility, onRemove })
               className="p-1 rounded text-tan hover:text-red-700 transition-colors"
               title="Remove Friend"
             >
-              <UserMinus className="w-4 h-4" />
+              <UserMinus className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -483,11 +483,11 @@ function FriendCard({ friend, myVisibilityLevel, onUpdateVisibility, onRemove })
         {expanded && (
           <div className="w-full mt-4 space-y-3 border-t border-tan/60 pt-3">
             {isLoading ? (
-              <p className="text-xs text-brown-dark text-center animate-pulse py-2">
+              <p className="text-sm text-brown-dark text-center animate-pulse py-2">
                 Fetching syllabus progress...
               </p>
             ) : progress.length === 0 ? (
-              <p className="text-xs text-brown-dark text-center italic py-2">
+              <p className="text-sm text-brown-dark text-center italic py-2">
                 {friendShareLevel === 'none'
                   ? "This buddy has restricted their progress visibility entirely."
                   : "Syllabus is empty."}
@@ -495,8 +495,8 @@ function FriendCard({ friend, myVisibilityLevel, onUpdateVisibility, onRemove })
             ) : (
               <div className="space-y-3">
                 {friendShareLevel === 'subject_only' && (
-                  <div className="flex items-center gap-1.5 p-2 bg-cream-100/50 rounded border border-tan text-[9px] text-brown-dark mb-2">
-                    <ShieldAlert className="w-3.5 h-3.5 text-brown-dark" />
+                  <div className="flex items-center gap-1.5 p-2 bg-cream-100/50 rounded border border-tan text-xs text-brown-dark mb-2">
+                    <ShieldAlert className="w-4 h-4 text-brown-dark" />
                     <span>Detailed chapter & topic progress is hidden by friend</span>
                   </div>
                 )}
@@ -516,14 +516,14 @@ function FriendCard({ friend, myVisibilityLevel, onUpdateVisibility, onRemove })
 
       <div className="mt-3 pt-3 border-t border-tan flex items-center justify-between">
         {/* Visibility share controls */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-[9px] uppercase font-bold text-brown-dark">
+        <div className="flex items-center gap-2">
+          <span className="text-xs uppercase font-bold text-brown-dark">
             Share Level:
           </span>
           <select
             value={myVisibilityLevel}
             onChange={(e) => onUpdateVisibility(e.target.value)}
-            className="px-1.5 py-0.5 border border-tan rounded bg-cream-50 text-[10px] text-brown font-semibold focus:ring-1 focus:ring-brown focus:outline-none cursor-pointer"
+            className="px-2 py-1 border border-tan rounded bg-cream-50 text-xs text-brown font-semibold focus:ring-1 focus:ring-brown focus:outline-none cursor-pointer"
           >
             <option value="full">Full Progress</option>
             <option value="subject_only">Summary Only</option>
@@ -533,7 +533,7 @@ function FriendCard({ friend, myVisibilityLevel, onUpdateVisibility, onRemove })
 
         <button
           onClick={() => setExpanded(!expanded)}
-          className="text-xs font-semibold text-brown hover:text-brown-dark flex items-center gap-1 transition-colors"
+          className="text-sm font-semibold text-brown hover:text-brown-dark flex items-center gap-1 transition-colors"
         >
           {expanded ? 'Hide Detail' : 'Show Detail'}
         </button>
@@ -554,27 +554,27 @@ function SubjectProgressRow({ subject, shareLevel }) {
           {shareLevel === 'full' && hasChapters && (
             <button
               onClick={() => setExpanded(!expanded)}
-              className="p-0.5 hover:bg-cream-200 rounded text-brown transition-colors"
+              className="p-1 hover:bg-cream-200 rounded text-brown transition-colors"
             >
               {expanded ? (
-                <ChevronUp className="w-3.5 h-3.5" />
+                <ChevronUp className="w-4 h-4" />
               ) : (
-                <ChevronDown className="w-3.5 h-3.5" />
+                <ChevronDown className="w-4 h-4" />
               )}
             </button>
           )}
-          <span className="font-serif font-bold text-brown text-xs truncate">
+          <span className="font-serif font-bold text-brown text-sm sm:text-base truncate">
             {subject.subjectName}
           </span>
         </div>
-        <span className="text-[10px] font-bold text-brown-text">
+        <span className="text-xs sm:text-sm font-bold text-brown-text">
           {subject.percentage}% ({subject.done}/{subject.total})
         </span>
       </div>
 
-      <div className="w-full bg-cream-100 rounded-full h-1.5">
+      <div className="w-full bg-cream-100 rounded-full h-2">
         <div
-          className="h-1.5 rounded-full"
+          className="h-2 rounded-full"
           style={{
             backgroundColor: subject.color || '#8B6E52',
             width: `${subject.percentage}%`,
@@ -618,32 +618,32 @@ function ChapterProgressRow({ chapter }) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           {hasTopics && (
             <button
               onClick={() => setExpanded(!expanded)}
-              className="p-0.5 hover:bg-cream-200 rounded text-brown-dark transition-colors"
+              className="p-1 hover:bg-cream-200 rounded text-brown-dark transition-colors"
             >
               {expanded ? (
-                <ChevronUp className="w-3.5 h-3.5" />
+                <ChevronUp className="w-4 h-4" />
               ) : (
-                <ChevronDown className="w-3.5 h-3.5" />
+                <ChevronDown className="w-4 h-4" />
               )}
             </button>
           )}
-          <span className="text-[11px] font-semibold text-brown-text truncate">
+          <span className="text-xs sm:text-sm font-semibold text-brown-text truncate">
             {chapter.chapterName}
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5 text-[9px] bg-white border border-tan/60 px-1.5 py-0.5 rounded font-medium text-brown-dark select-none">
+        <div className="flex items-center gap-1.5 text-xs bg-white border border-tan/60 px-2 py-0.5 rounded font-medium text-brown-dark select-none">
           <span>{currentStatusIcon}</span>
           <span>{currentStatusLabel}</span>
         </div>
       </div>
 
       {expanded && hasTopics && (
-        <div className="pl-3 border-l border-tan/40 space-y-1 pt-0.5">
+        <div className="pl-4 border-l border-tan/40 space-y-1.5 pt-1">
           {chapter.topics.map((topic) => {
             const topicStatusIcon = statusIcons[topic.status] || '⭕';
             const topicStatusLabel = statusLabels[topic.status] || 'Not Started';
@@ -651,13 +651,13 @@ function ChapterProgressRow({ chapter }) {
             return (
               <div
                 key={topic.topicId}
-                className="flex items-center justify-between p-1 bg-cream-100/40 rounded hover:bg-cream-100/70 transition-colors"
+                className="flex items-center justify-between px-2.5 py-1.5 bg-cream-100/40 rounded hover:bg-cream-100/70 transition-colors animate-fade-in"
               >
-                <span className="text-[10px] text-brown-dark truncate flex-1 pr-2">
+                <span className="text-xs text-brown-dark truncate flex-1 pr-2">
                   {topic.topicName}
                 </span>
                 <span
-                  className="text-[8px] font-semibold text-brown-dark/80"
+                  className="text-xs font-semibold text-brown-dark/80"
                   title={topicStatusLabel}
                 >
                   {topicStatusIcon}

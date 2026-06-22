@@ -192,7 +192,7 @@ export default function Groups() {
     <div className="min-h-screen bg-cream-50 text-brown-text font-sans">
       <Navbar />
 
-      <div className="max-w-6xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-6">
         {!selectedGroupId ? (
           // --- Main Dashboard: Lists all groups ---
           <div>

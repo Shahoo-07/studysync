@@ -252,7 +252,7 @@ export default function Files() {
     <div className="min-h-screen bg-cream-50 text-brown-text font-sans">
       <Navbar />
 
-      <div className="max-w-6xl mx-auto p-6">
+      <div className="max-w-7xl mx-auto p-6">
         <div className="mb-8">
           <h1 className="text-4xl font-serif font-bold text-brown mb-2">
             Study Files

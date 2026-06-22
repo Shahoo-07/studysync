@@ -138,7 +138,7 @@ export default function Navbar() {
 
   return (
     <nav className="bg-white shadow-sm border-b border-tan sticky top-0 z-40">
-      <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
         <Link to="/" className="flex items-center gap-2">
           <span className="text-2xl font-serif font-bold text-brown">
             StudySync
