@@ -61,7 +61,7 @@ export const login = async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+      return res.status(404).json({ error: 'User not registered' });
     }
 
     const user = result.rows[0];

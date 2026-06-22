@@ -15,6 +15,12 @@ export const friendsService = {
   getFriendProgress: (friendId) =>
     api.get(`/friends/${friendId}/progress`),
 
+  getVisibilitySettings: () =>
+    api.get('/friends/visibility'),
+
+  updateVisibilitySetting: (friendId, visibilityLevel) =>
+    api.post('/friends/visibility', { friendId, visibilityLevel }),
+
   getLeaderboard: (subjectId) =>
     api.get('/leaderboard/friends', { params: { subjectId } }),
 };

@@ -162,13 +162,26 @@ export const getFriendProgress = async (req, res) => {
       return res.status(403).json({ error: 'Not authorized to view this friend\'s progress' });
     }
 
+    // Check visibility setting of friend (owner: friendId, viewer: userId)
+    const visibility = await pool.query(
+      `SELECT visibility_level as "visibilityLevel"
+       FROM progress_visibility
+       WHERE owner_id = $1 AND viewer_id = $2`,
+      [friendId, userId]
+    );
+    const visibilityLevel = visibility.rows[0]?.visibilityLevel || 'full';
+
+    if (visibilityLevel === 'none') {
+      return res.json({ visibilityLevel: 'none', subjects: [] });
+    }
+
     // Get friend's subjects and progress
     const subjects = await pool.query(
       `SELECT id, name, color FROM subjects WHERE user_id = $1 ORDER BY created_at DESC`,
       [friendId]
     );
 
-    const progress = await Promise.all(
+    const progressSubjects = await Promise.all(
       subjects.rows.map(async (subject) => {
         const totalTopics = await pool.query(
           `SELECT COUNT(*) as count FROM topics
@@ -187,6 +200,36 @@ export const getFriendProgress = async (req, res) => {
           ? Math.round((doneTopics.rows[0].count / totalTopics.rows[0].count) * 100)
           : 0;
 
+        let chapters = [];
+
+        // If visibility level is full, query detailed chapters and topics
+        if (visibilityLevel === 'full') {
+          const chaptersResult = await pool.query(
+            `SELECT id, name, status, order_index FROM chapters WHERE subject_id = $1 ORDER BY order_index ASC`,
+            [subject.id]
+          );
+
+          chapters = await Promise.all(
+            chaptersResult.rows.map(async (chapter) => {
+              const topicsResult = await pool.query(
+                `SELECT id, name, status, order_index FROM topics WHERE chapter_id = $1 ORDER BY order_index ASC`,
+                [chapter.id]
+              );
+
+              return {
+                chapterId: chapter.id,
+                chapterName: chapter.name,
+                status: chapter.status,
+                topics: topicsResult.rows.map((t) => ({
+                  topicId: t.id,
+                  topicName: t.name,
+                  status: t.status,
+                })),
+              };
+            })
+          );
+        }
+
         return {
           subjectId: subject.id,
           subjectName: subject.name,
@@ -194,13 +237,73 @@ export const getFriendProgress = async (req, res) => {
           total: totalTopics.rows[0].count,
           done: doneTopics.rows[0].count,
           percentage,
+          chapters,
         };
       })
     );
 
-    res.json(progress);
+    res.json({
+      visibilityLevel,
+      subjects: progressSubjects,
+    });
   } catch (err) {
     console.error('Get friend progress error:', err);
     res.status(500).json({ error: 'Failed to fetch friend progress' });
+  }
+};
+
+export const getVisibilitySettings = async (req, res) => {
+  try {
+    const { userId } = req;
+
+    const result = await pool.query(
+      `SELECT
+         CASE
+           WHEN f.requester_id = $1 THEN f.addressee_id
+           ELSE f.requester_id
+         END as "friendId",
+         u.name,
+         u.email,
+         COALESCE(pv.visibility_level, 'full') as "visibilityLevel"
+       FROM friendships f
+       INNER JOIN users u ON (
+         (f.requester_id = $1 AND u.id = f.addressee_id) OR
+         (f.addressee_id = $1 AND u.id = f.requester_id)
+       )
+       LEFT JOIN progress_visibility pv ON (pv.owner_id = $1 AND pv.viewer_id = u.id)
+       WHERE f.status = 'accepted' AND (f.requester_id = $1 OR f.addressee_id = $1)
+       ORDER BY u.name ASC`,
+      [userId]
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Get visibility settings error:', err);
+    res.status(500).json({ error: 'Failed to fetch visibility settings' });
+  }
+};
+
+export const updateVisibilitySetting = async (req, res) => {
+  try {
+    const { userId } = req;
+    const { friendId, visibilityLevel } = req.body;
+
+    if (!['full', 'subject_only', 'none'].includes(visibilityLevel)) {
+      return res.status(400).json({ error: 'Invalid visibility level' });
+    }
+
+    // Upsert visibility setting
+    await pool.query(
+      `INSERT INTO progress_visibility (owner_id, viewer_id, visibility_level)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (owner_id, viewer_id)
+       DO UPDATE SET visibility_level = EXCLUDED.visibility_level`,
+       [userId, friendId, visibilityLevel]
+    );
+
+    res.json({ message: 'Visibility setting updated successfully', friendId, visibilityLevel });
+  } catch (err) {
+    console.error('Update visibility setting error:', err);
+    res.status(500).json({ error: 'Failed to update visibility setting' });
   }
 };

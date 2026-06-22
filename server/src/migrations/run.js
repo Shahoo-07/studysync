@@ -95,7 +95,9 @@ CREATE TABLE IF NOT EXISTS progress_visibility (
   viewer_id UUID REFERENCES users(id) ON DELETE CASCADE,
   group_id UUID REFERENCES study_groups(id) ON DELETE CASCADE,
   subject_ids UUID[],
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  visibility_level VARCHAR(20) DEFAULT 'full',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(owner_id, viewer_id)
 );
 
 -- File folders table
@@ -160,6 +162,11 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
 
 -- Alter table to add status to chapters if it doesn't exist
 ALTER TABLE chapters ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'not_started';
+
+-- Alter table to add visibility_level and unique constraint to progress_visibility
+ALTER TABLE progress_visibility ADD COLUMN IF NOT EXISTS visibility_level VARCHAR(20) DEFAULT 'full';
+ALTER TABLE progress_visibility DROP CONSTRAINT IF EXISTS unique_owner_viewer;
+ALTER TABLE progress_visibility ADD CONSTRAINT unique_owner_viewer UNIQUE (owner_id, viewer_id);
 `;
 
 const runMigrations = async () => {

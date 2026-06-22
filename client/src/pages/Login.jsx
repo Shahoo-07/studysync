@@ -34,7 +34,16 @@ export default function Login() {
       setTokens(accessToken, refreshToken, user);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed');
+      if (err.response?.status === 404 || err.response?.data?.error === 'User not registered') {
+        navigate('/register', {
+          state: {
+            email: formData.email,
+            error: 'This email is not registered. Please sign up to create an account.',
+          },
+        });
+      } else {
+        setError(err.response?.data?.error || 'Login failed');
+      }
     } finally {
       setLoading(false);
     }

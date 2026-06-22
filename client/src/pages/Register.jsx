@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/auth';
 import { authService } from '../services/auth.service';
 import { Button } from '../components/ui/Button';
@@ -7,12 +7,13 @@ import { Input } from '../components/ui/Input';
 
 export default function Register() {
   const navigate = useNavigate();
+  const location = useLocation();
   const setTokens = useAuthStore((state) => state.setTokens);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(location.state?.error || '');
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
+    email: location.state?.email || '',
     password: '',
     confirmPassword: '',
   });

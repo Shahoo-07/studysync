@@ -6,7 +6,7 @@ import { useAuthStore } from '../store/auth';
 import Navbar from '../components/layout/Navbar';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { Search, UserPlus, Check, X, Trophy, UserMinus, ShieldAlert, Award } from 'lucide-react';
+import { Search, UserPlus, Check, X, Trophy, UserMinus, ShieldAlert, Award, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function Friends() {
   const queryClient = useQueryClient();
@@ -21,6 +21,22 @@ export default function Friends() {
   const { data: friendships = [], isLoading: friendsLoading } = useQuery({
     queryKey: ['friends'],
     queryFn: () => friendsService.getFriends().then((r) => r.data),
+  });
+
+  // Fetch friends visibility settings
+  const { data: visibilitySettings = [] } = useQuery({
+    queryKey: ['friends-visibility'],
+    queryFn: () => friendsService.getVisibilitySettings().then((r) => r.data),
+  });
+
+  // Update visibility setting mutation
+  const updateVisibilityMutation = useMutation({
+    mutationFn: ({ friendId, visibilityLevel }) =>
+      friendsService.updateVisibilitySetting(friendId, visibilityLevel),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['friends-visibility'] });
+      queryClient.invalidateQueries({ queryKey: ['friend-progress'] });
+    },
   });
 
   // Fetch leaderboard
@@ -272,17 +288,28 @@ export default function Friends() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {friends.map((friend) => (
-                    <FriendCard
-                      key={friend.friendId}
-                      friend={friend}
-                      onRemove={() => {
-                        if (confirm(`Remove ${friend.name} from friends list?`)) {
-                          removeFriendMutation.mutate(friend.friendId);
+                  {friends.map((friend) => {
+                    const setting = visibilitySettings.find((s) => s.friendId === friend.friendId);
+                    const level = setting?.visibilityLevel || 'full';
+                    return (
+                      <FriendCard
+                        key={friend.friendId}
+                        friend={friend}
+                        myVisibilityLevel={level}
+                        onUpdateVisibility={(newLevel) =>
+                          updateVisibilityMutation.mutate({
+                            friendId: friend.friendId,
+                            visibilityLevel: newLevel,
+                          })
                         }
-                      }}
-                    />
-                  ))}
+                        onRemove={() => {
+                          if (confirm(`Remove ${friend.name} from friends list?`)) {
+                            removeFriendMutation.mutate(friend.friendId);
+                          }
+                        }}
+                      />
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -381,15 +408,18 @@ export default function Friends() {
 }
 
 // Sub-component representing a single accepted friend card
-function FriendCard({ friend, onRemove }) {
+function FriendCard({ friend, myVisibilityLevel, onUpdateVisibility, onRemove }) {
   const [expanded, setExpanded] = useState(false);
 
   // Fetch this specific friend's subject-by-subject progress on accordion expansion
-  const { data: progress = [], isLoading } = useQuery({
+  const { data: progressResponse = {}, isLoading } = useQuery({
     queryKey: ['friend-progress', friend.friendId],
     queryFn: () => friendsService.getFriendProgress(friend.friendId).then((r) => r.data),
     enabled: expanded,
   });
+
+  const progress = progressResponse.subjects || [];
+  const friendShareLevel = progressResponse.visibilityLevel || 'full';
 
   // Calculate total syllabus average from progress query data
   const totalWeight = progress.reduce((acc, sub) => acc + sub.total, 0);
@@ -397,100 +427,246 @@ function FriendCard({ friend, onRemove }) {
   const totalPercentage = totalWeight > 0 ? Math.round((doneWeight / totalWeight) * 100) : 0;
 
   return (
-    <div className="card border border-tan bg-white p-4 shadow-sm hover:shadow-md transition-all">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {/* Friend Profile Circle */}
-          <div className="w-12 h-12 rounded-full bg-cream-100 flex items-center justify-center border border-tan relative">
-            <span className="text-lg font-serif font-bold text-brown">
-              {friend.name[0].toUpperCase()}
-            </span>
+    <div className="card border border-tan bg-white p-4 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
+      <div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Friend Profile Circle */}
+            <div className="w-12 h-12 rounded-full bg-cream-100 flex items-center justify-center border border-tan relative flex-shrink-0">
+              <span className="text-lg font-serif font-bold text-brown">
+                {friend.name[0].toUpperCase()}
+              </span>
+            </div>
+
+            <div className="min-w-0">
+              <h4 className="font-serif font-bold text-brown text-base truncate">{friend.name}</h4>
+              <p className="text-xs text-brown-dark truncate">{friend.email}</p>
+            </div>
           </div>
 
-          <div>
-            <h4 className="font-serif font-bold text-brown text-base">{friend.name}</h4>
-            <p className="text-xs text-brown-dark">{friend.email}</p>
+          <div className="flex items-center gap-2">
+            {/* Progress Circular visual representation */}
+            <div className="w-10 h-10 relative flex items-center justify-center">
+              <svg className="w-full h-full transform -rotate-90">
+                <circle
+                  cx="20"
+                  cy="20"
+                  r="16"
+                  className="stroke-cream-200 fill-none"
+                  strokeWidth="3.5"
+                />
+                <circle
+                  cx="20"
+                  cy="20"
+                  r="16"
+                  className="stroke-brown fill-none transition-all duration-500"
+                  strokeWidth="3.5"
+                  strokeDasharray={`${2 * Math.PI * 16}`}
+                  strokeDashoffset={`${2 * Math.PI * 16 * (1 - totalPercentage / 100)}`}
+                />
+              </svg>
+              <span className="text-[10px] font-bold absolute text-brown-text">
+                {totalPercentage}%
+              </span>
+            </div>
+
+            <button
+              onClick={onRemove}
+              className="p-1 rounded text-tan hover:text-red-700 transition-colors"
+              title="Remove Friend"
+            >
+              <UserMinus className="w-4 h-4" />
+            </button>
           </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          {/* Progress Circular visual representation */}
-          <div className="w-10 h-10 relative flex items-center justify-center">
-            <svg className="w-full h-full transform -rotate-90">
-              <circle
-                cx="20"
-                cy="20"
-                r="16"
-                className="stroke-cream-200 fill-none"
-                strokeWidth="3.5"
-              />
-              <circle
-                cx="20"
-                cy="20"
-                r="16"
-                className="stroke-brown fill-none transition-all duration-500"
-                strokeWidth="3.5"
-                strokeDasharray={`${2 * Math.PI * 16}`}
-                strokeDashoffset={`${2 * Math.PI * 16 * (1 - totalPercentage / 100)}`}
-              />
-            </svg>
-            <span className="text-[10px] font-bold absolute text-brown-text">
-              {totalPercentage}%
-            </span>
-          </div>
-
-          <button
-            onClick={onRemove}
-            className="p-1 rounded text-tan hover:text-red-700 transition-colors"
-            title="Remove Friend"
-          >
-            <UserMinus className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      <div className="mt-3 pt-3 border-t border-tan flex flex-col items-center">
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="text-xs font-semibold text-brown hover:text-brown-dark flex items-center gap-1 transition-colors"
-        >
-          {expanded ? 'Hide Progress Detail' : 'Show Progress Detail'}
-        </button>
 
         {expanded && (
-          <div className="w-full mt-3 space-y-2">
+          <div className="w-full mt-4 space-y-3 border-t border-tan/60 pt-3">
             {isLoading ? (
-              <p className="text-[10px] text-brown-dark text-center animate-pulse">
+              <p className="text-xs text-brown-dark text-center animate-pulse py-2">
                 Fetching syllabus progress...
               </p>
             ) : progress.length === 0 ? (
-              <p className="text-[10px] text-brown-dark text-center italic">
-                Syllabus is empty or progress sharing is restricted.
+              <p className="text-xs text-brown-dark text-center italic py-2">
+                {friendShareLevel === 'none'
+                  ? "This buddy has restricted their progress visibility entirely."
+                  : "Syllabus is empty."}
               </p>
             ) : (
-              <div className="space-y-2.5">
-                {progress.map((sub) => (
-                  <div key={sub.subjectId}>
-                    <div className="flex justify-between text-[10px] font-medium text-brown-dark mb-0.5">
-                      <span className="truncate max-w-[70%]">{sub.subjectName}</span>
-                      <span>{sub.percentage}% ({sub.done}/{sub.total})</span>
-                    </div>
-                    <div className="w-full bg-cream-100 rounded-full h-1">
-                      <div
-                        className="h-1 rounded-full"
-                        style={{
-                          backgroundColor: sub.color || '#8B6E52',
-                          width: `${sub.percentage}%`,
-                        }}
-                      />
-                    </div>
+              <div className="space-y-3">
+                {friendShareLevel === 'subject_only' && (
+                  <div className="flex items-center gap-1.5 p-2 bg-cream-100/50 rounded border border-tan text-[9px] text-brown-dark mb-2">
+                    <ShieldAlert className="w-3.5 h-3.5 text-brown-dark" />
+                    <span>Detailed chapter & topic progress is hidden by friend</span>
                   </div>
+                )}
+
+                {progress.map((sub) => (
+                  <SubjectProgressRow
+                    key={sub.subjectId}
+                    subject={sub}
+                    shareLevel={friendShareLevel}
+                  />
                 ))}
               </div>
             )}
           </div>
         )}
       </div>
+
+      <div className="mt-3 pt-3 border-t border-tan flex items-center justify-between">
+        {/* Visibility share controls */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-[9px] uppercase font-bold text-brown-dark">
+            Share Level:
+          </span>
+          <select
+            value={myVisibilityLevel}
+            onChange={(e) => onUpdateVisibility(e.target.value)}
+            className="px-1.5 py-0.5 border border-tan rounded bg-cream-50 text-[10px] text-brown font-semibold focus:ring-1 focus:ring-brown focus:outline-none cursor-pointer"
+          >
+            <option value="full">Full Progress</option>
+            <option value="subject_only">Summary Only</option>
+            <option value="none">Hidden</option>
+          </select>
+        </div>
+
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="text-xs font-semibold text-brown hover:text-brown-dark flex items-center gap-1 transition-colors"
+        >
+          {expanded ? 'Hide Detail' : 'Show Detail'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Nested component for Subject detailed row
+function SubjectProgressRow({ subject, shareLevel }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasChapters = subject.chapters && subject.chapters.length > 0;
+
+  return (
+    <div className="border border-tan/60 bg-cream-50/30 rounded-lg p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          {shareLevel === 'full' && hasChapters && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="p-0.5 hover:bg-cream-200 rounded text-brown transition-colors"
+            >
+              {expanded ? (
+                <ChevronUp className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5" />
+              )}
+            </button>
+          )}
+          <span className="font-serif font-bold text-brown text-xs truncate">
+            {subject.subjectName}
+          </span>
+        </div>
+        <span className="text-[10px] font-bold text-brown-text">
+          {subject.percentage}% ({subject.done}/{subject.total})
+        </span>
+      </div>
+
+      <div className="w-full bg-cream-100 rounded-full h-1.5">
+        <div
+          className="h-1.5 rounded-full"
+          style={{
+            backgroundColor: subject.color || '#8B6E52',
+            width: `${subject.percentage}%`,
+          }}
+        />
+      </div>
+
+      {expanded && shareLevel === 'full' && hasChapters && (
+        <div className="mt-3 pl-4 border-l border-tan/60 space-y-3 pt-1">
+          {subject.chapters.map((chapter) => (
+            <ChapterProgressRow key={chapter.chapterId} chapter={chapter} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Nested component for Chapter detailed row
+function ChapterProgressRow({ chapter }) {
+  const [expanded, setExpanded] = useState(false);
+  const hasTopics = chapter.topics && chapter.topics.length > 0;
+
+  const statusIcons = {
+    not_started: '⭕',
+    in_progress: '⏳',
+    done: '✅',
+    revision_needed: '🔄',
+  };
+
+  const statusLabels = {
+    not_started: 'Not Started',
+    in_progress: 'In Progress',
+    done: 'Done',
+    revision_needed: 'Revision Needed',
+  };
+
+  const currentStatusIcon = statusIcons[chapter.status] || '⭕';
+  const currentStatusLabel = statusLabels[chapter.status] || 'Not Started';
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          {hasTopics && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="p-0.5 hover:bg-cream-200 rounded text-brown-dark transition-colors"
+            >
+              {expanded ? (
+                <ChevronUp className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronDown className="w-3.5 h-3.5" />
+              )}
+            </button>
+          )}
+          <span className="text-[11px] font-semibold text-brown-text truncate">
+            {chapter.chapterName}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-1.5 text-[9px] bg-white border border-tan/60 px-1.5 py-0.5 rounded font-medium text-brown-dark select-none">
+          <span>{currentStatusIcon}</span>
+          <span>{currentStatusLabel}</span>
+        </div>
+      </div>
+
+      {expanded && hasTopics && (
+        <div className="pl-3 border-l border-tan/40 space-y-1 pt-0.5">
+          {chapter.topics.map((topic) => {
+            const topicStatusIcon = statusIcons[topic.status] || '⭕';
+            const topicStatusLabel = statusLabels[topic.status] || 'Not Started';
+
+            return (
+              <div
+                key={topic.topicId}
+                className="flex items-center justify-between p-1 bg-cream-100/40 rounded hover:bg-cream-100/70 transition-colors"
+              >
+                <span className="text-[10px] text-brown-dark truncate flex-1 pr-2">
+                  {topic.topicName}
+                </span>
+                <span
+                  className="text-[8px] font-semibold text-brown-dark/80"
+                  title={topicStatusLabel}
+                >
+                  {topicStatusIcon}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
