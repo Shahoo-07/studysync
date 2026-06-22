@@ -32,20 +32,20 @@ export default function Groups() {
   const queryClient = useQueryClient();
   const currentUser = useAuthStore((state) => state.user);
   const navigate = useNavigate();
-  
+
   const [selectedGroupId, setSelectedGroupId] = useState(null);
-  
+
   // Modals / Input States
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [newGroupDesc, setNewGroupDesc] = useState('');
   const [inviteCodeInput, setInviteCodeInput] = useState('');
-  
+
   const [copiedCode, setCopiedCode] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [activeTab, setActiveTab] = useState('members'); // 'members' | 'leaderboard' | 'files' | 'feed'
-  
+
   // Real-time group activity feed state
   const [activityFeed, setActivityFeed] = useState([]);
 
@@ -95,7 +95,7 @@ export default function Groups() {
     const handleGroupActivity = (activity) => {
       if (activity.groupId === selectedGroupId) {
         setActivityFeed((prev) => [activity, ...prev]);
-        
+
         // Refresh members list and leaderboard to show updated progress values
         queryClient.invalidateQueries({ queryKey: ['group-members', selectedGroupId] });
         queryClient.invalidateQueries({ queryKey: ['group-leaderboard', selectedGroupId] });
@@ -259,17 +259,17 @@ export default function Groups() {
                       <h3 className="text-xl font-serif font-bold text-brown truncate mb-2">
                         {group.name}
                       </h3>
-                      <p className="text-xs text-brown-dark line-clamp-3 mb-4">
+                      <p className="text-sm text-brown-dark line-clamp-3 mb-4">
                         {group.description || 'No description provided.'}
                       </p>
                     </div>
-                    
-                    <div className="pt-4 border-t border-tan flex items-center justify-between text-xs text-brown-dark">
+
+                    <div className="pt-4 border-t border-tan flex items-center justify-between text-sm text-brown-dark">
                       <span className="flex items-center gap-1">
                         <Users className="w-4 h-4" />
                         {group.membercount || 1} member{group.membercount !== 1 ? 's' : ''}
                       </span>
-                      <span className="bg-cream-100 px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider">
+                      <span className="bg-cream-100 px-2.5 py-1 rounded text-xs uppercase font-bold tracking-wider">
                         Code: {group.invite_code}
                       </span>
                     </div>
@@ -302,10 +302,10 @@ export default function Groups() {
 
               <div className="flex items-center gap-2 self-stretch sm:self-auto bg-white border border-tan rounded-lg p-2.5 shadow-sm justify-between">
                 <div>
-                  <span className="text-[10px] font-bold uppercase text-brown-dark block tracking-wider leading-none">
+                  <span className="text-xs font-bold uppercase text-brown-dark block tracking-wider leading-none">
                     Group Invite Code
                   </span>
-                  <span className="text-sm font-bold font-serif text-brown tracking-widest mt-1 block">
+                  <span className="text-base font-bold font-serif text-brown tracking-widest mt-1 block">
                     {groupDetails?.invite_code}
                   </span>
                 </div>
@@ -330,11 +330,10 @@ export default function Groups() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`px-4 py-3 font-serif font-bold text-sm border-b-2 transition-colors ${
-                    activeTab === tab.id
+                  className={`px-4 py-3 font-serif font-bold text-sm border-b-2 transition-colors ${activeTab === tab.id
                       ? 'border-brown text-brown'
                       : 'border-transparent text-brown-dark hover:text-brown'
-                  }`}
+                    }`}
                 >
                   {tab.label}
                 </button>
@@ -360,19 +359,18 @@ export default function Groups() {
                         return (
                           <div
                             key={member.id}
-                            className={`card border border-tan bg-white p-4 shadow-sm flex items-center justify-between ${
-                              isSelf ? 'ring-1 ring-brown/30 bg-cream-50/20' : ''
-                            }`}
+                            className={`card border border-tan bg-white p-4 shadow-sm flex items-center justify-between ${isSelf ? 'ring-1 ring-brown/30 bg-cream-50/20' : ''
+                              }`}
                           >
                             <div className="flex items-center gap-3 min-w-0">
                               <div className="w-10 h-10 rounded-full bg-cream-100 flex items-center justify-center font-bold text-brown font-serif border border-tan flex-shrink-0">
                                 {member.name[0].toUpperCase()}
                               </div>
                               <div className="min-w-0">
-                                <h4 className="font-serif font-bold text-brown text-sm truncate">
+                                <h4 className="font-serif font-bold text-brown text-base truncate">
                                   {member.name}
                                 </h4>
-                                <span className="text-[9px] uppercase font-bold tracking-wider text-brown-dark/70">
+                                <span className="text-xs uppercase font-bold tracking-wider text-brown-dark/70">
                                   {member.role}
                                 </span>
                               </div>
@@ -380,26 +378,26 @@ export default function Groups() {
 
                             <div className="flex items-center gap-3">
                               {/* circular SVG progress bar */}
-                              <div className="w-10 h-10 relative flex items-center justify-center flex-shrink-0" title={`${member.doneTopics}/${member.totalTopics} topics complete`}>
+                              <div className="w-12 h-12 relative flex items-center justify-center flex-shrink-0" title={`${member.doneTopics}/${member.totalTopics} topics complete`}>
                                 <svg className="w-full h-full transform -rotate-90">
                                   <circle
-                                    cx="20"
-                                    cy="20"
-                                    r="16"
+                                    cx="24"
+                                    cy="24"
+                                    r="20"
                                     className="stroke-cream-200 fill-none"
-                                    strokeWidth="3"
+                                    strokeWidth="3.5"
                                   />
                                   <circle
-                                    cx="20"
-                                    cy="20"
-                                    r="16"
+                                    cx="24"
+                                    cy="24"
+                                    r="20"
                                     className="stroke-brown fill-none transition-all duration-500"
-                                    strokeWidth="3"
-                                    strokeDasharray={`${2 * Math.PI * 16}`}
-                                    strokeDashoffset={`${2 * Math.PI * 16 * (1 - member.percentage / 100)}`}
+                                    strokeWidth="3.5"
+                                    strokeDasharray={`${2 * Math.PI * 20}`}
+                                    strokeDashoffset={`${2 * Math.PI * 20 * (1 - member.percentage / 100)}`}
                                   />
                                 </svg>
-                                <span className="text-[10px] font-bold absolute text-brown-text">
+                                <span className="text-xs font-bold absolute text-brown-text">
                                   {member.percentage}%
                                 </span>
                               </div>
@@ -443,27 +441,26 @@ export default function Groups() {
                       return (
                         <div
                           key={row.id}
-                          className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
-                            isSelf
+                          className={`flex items-center justify-between p-3 rounded-lg border transition-all ${isSelf
                               ? 'bg-cream-100 border-brown font-semibold shadow-sm'
                               : 'bg-white border-tan hover:bg-cream-50'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center gap-3">
-                            <span className="text-sm w-6 text-center">{rankBadge}</span>
-                            <div className="w-8 h-8 rounded-full bg-cream-200 flex items-center justify-center font-bold font-serif text-xs text-brown border border-tan">
+                            <span className="text-base w-6 text-center">{rankBadge}</span>
+                            <div className="w-9 h-9 rounded-full bg-cream-200 flex items-center justify-center font-bold font-serif text-sm text-brown border border-tan">
                               {row.name[0].toUpperCase()}
                             </div>
                             <div>
-                              <p className="text-xs font-semibold text-brown-text leading-tight">
+                              <p className="text-sm font-semibold text-brown-text leading-tight">
                                 {row.name}
                               </p>
-                              <p className="text-[10px] text-brown-dark">
+                              <p className="text-xs text-brown-dark">
                                 {row.doneTopics || 0}/{row.totalTopics || 0} topics done
                               </p>
                             </div>
                           </div>
-                          <span className="text-sm font-bold text-brown font-serif">
+                          <span className="text-base font-bold text-brown font-serif">
                             {row.percentage !== null && row.percentage !== undefined ? `${row.percentage}%` : '0%'}
                           </span>
                         </div>
@@ -486,9 +483,9 @@ export default function Groups() {
 
                   {groupFiles.length === 0 ? (
                     <div className="card text-center py-10 border border-dashed border-tan">
-                      <File className="w-10 h-10 text-tan mx-auto mb-2" />
-                      <p className="text-sm text-brown font-semibold">No materials shared yet</p>
-                      <p className="text-xs text-brown-dark mt-1">
+                      <File className="w-12 h-12 text-tan mx-auto mb-2" />
+                      <p className="text-base text-brown font-semibold">No materials shared yet</p>
+                      <p className="text-sm text-brown-dark mt-1">
                         Go to your Files page to share notes or textbooks with this study group.
                       </p>
                     </div>
@@ -505,10 +502,10 @@ export default function Groups() {
                                 <File className="w-5.5 h-5.5 text-brown" />
                               </div>
                               <div className="min-w-0">
-                                <p className="text-sm font-semibold text-brown-text truncate">
+                                <p className="text-base font-semibold text-brown-text truncate">
                                   {file.original_name}
                                 </p>
-                                <p className="text-[10px] text-brown-dark mt-0.5">
+                                <p className="text-xs text-brown-dark mt-0.5">
                                   Shared by <span className="font-semibold text-brown">{file.uploaderName}</span> &bull; {format(new Date(file.created_at), 'MMM dd, yyyy')}
                                 </p>
                               </div>
@@ -534,23 +531,23 @@ export default function Groups() {
                     <MessageSquare className="w-5 h-5 text-brown" />
                     Live Activity Feed
                   </h3>
-                  
+
                   <div className="space-y-4">
                     {/* Connection Status Helper */}
-                    <div className="flex items-center gap-2 p-2 bg-cream-100/50 rounded-lg border border-tan text-[10px] text-brown-dark">
-                      <span className={`w-2 h-2 rounded-full ${socket ? 'bg-green-700' : 'bg-tan animate-pulse'}`} />
+                    <div className="flex items-center gap-2 p-2 bg-cream-100/50 rounded-lg border border-tan text-xs text-brown-dark">
+                      <span className={`w-2.5 h-2.5 rounded-full ${socket ? 'bg-green-700' : 'bg-tan animate-pulse'}`} />
                       <span>{socket ? 'Real-time sync active' : 'Connecting to workspace updates...'}</span>
                     </div>
 
                     <div className="space-y-3.5 max-h-80 overflow-y-auto pr-1">
                       {activityFeed.length === 0 ? (
-                        <div className="text-center py-8 text-xs text-brown-dark italic">
+                        <div className="text-center py-8 text-sm text-brown-dark italic">
                           No recent study activities. Updates will appear here in real-time as members complete syllabus topics.
                         </div>
                       ) : (
                         activityFeed.map((activity, idx) => (
-                          <div key={idx} className="flex gap-2.5 text-xs text-brown-text items-start">
-                            <div className="w-6 h-6 rounded-full bg-cream-200 flex items-center justify-center font-bold text-[10px] text-brown flex-shrink-0 mt-0.5">
+                          <div key={idx} className="flex gap-2.5 text-sm text-brown-text items-start">
+                            <div className="w-7 h-7 rounded-full bg-cream-200 flex items-center justify-center font-bold text-xs text-brown flex-shrink-0 mt-0.5">
                               {activity.userName[0].toUpperCase()}
                             </div>
                             <div className="flex-1">
@@ -558,7 +555,7 @@ export default function Groups() {
                                 <span className="font-bold text-brown">{activity.userName}</span>{' '}
                                 {activity.action}
                               </p>
-                              <span className="text-[9px] text-brown-dark/60 block mt-0.5">
+                              <span className="text-xs text-brown-dark/60 block mt-0.5">
                                 {format(parseISO(activity.createdAt), 'hh:mm a')}
                               </span>
                             </div>
