@@ -51,9 +51,9 @@ export const updateSubject = async (req, res) => {
     const { id } = req.params;
     const { name, color, exam_date, exam_time, exam_venue, total_marks } = req.body;
 
-    // Verify ownership
+    // Verify ownership and fetch current values
     const ownership = await pool.query(
-      'SELECT user_id FROM subjects WHERE id = $1',
+      'SELECT user_id, name, color, exam_date, exam_time, exam_venue, total_marks FROM subjects WHERE id = $1',
       [id]
     );
 
@@ -61,17 +61,25 @@ export const updateSubject = async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
+    const current = ownership.rows[0];
+    const updatedName = name !== undefined ? name : current.name;
+    const updatedColor = color !== undefined ? color : current.color;
+    const updatedExamDate = exam_date !== undefined ? exam_date : current.exam_date;
+    const updatedExamTime = exam_time !== undefined ? exam_time : current.exam_time;
+    const updatedExamVenue = exam_venue !== undefined ? exam_venue : current.exam_venue;
+    const updatedTotalMarks = total_marks !== undefined ? total_marks : current.total_marks;
+
     const result = await pool.query(
       `UPDATE subjects
-       SET name = COALESCE($1, name),
-           color = COALESCE($2, color),
-           exam_date = COALESCE($3, exam_date),
-           exam_time = COALESCE($4, exam_time),
-           exam_venue = COALESCE($5, exam_venue),
-           total_marks = COALESCE($6, total_marks)
+       SET name = $1,
+           color = $2,
+           exam_date = $3,
+           exam_time = $4,
+           exam_venue = $5,
+           total_marks = $6
        WHERE id = $7
        RETURNING id, name, color, exam_date, exam_time, exam_venue, total_marks, created_at`,
-      [name, color, exam_date, exam_time, exam_venue, total_marks, id]
+      [updatedName, updatedColor, updatedExamDate, updatedExamTime, updatedExamVenue, updatedTotalMarks, id]
     );
 
     res.json(result.rows[0]);
