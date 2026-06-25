@@ -1,14 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import pool from '../config/db.js';
-import path from 'path';
-import fs from 'fs';
-
-const UPLOAD_DIR = process.env.FILE_STORAGE_PATH || '/app/uploads';
-
-// Ensure upload directory exists
-if (!fs.existsSync(UPLOAD_DIR)) {
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-}
+import { uploadFileToStorage, downloadFileFromStorage, deleteFileFromStorage } from '../utils/storage.js';
 
 export const uploadFile = async (req, res) => {
   try {
@@ -18,8 +10,11 @@ export const uploadFile = async (req, res) => {
       return res.status(400).json({ error: 'File required' });
     }
 
-    const { originalname, filename, size, mimetype } = req.file;
+    const { originalname, size, mimetype } = req.file;
     const { subjectId, folderId, description } = req.body;
+
+    // Upload to storage (R2 or local disk via our utility)
+    const uniqueName = await uploadFileToStorage(req.file);
 
     const id = uuidv4();
 
@@ -27,7 +22,7 @@ export const uploadFile = async (req, res) => {
       `INSERT INTO files (id, uploader_id, name, original_name, mime_type, size_bytes, file_path, subject_id, folder_id, description)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING id, name, original_name, mime_type, size_bytes, file_path, subject_id, description, download_count, created_at`,
-      [id, userId, filename, originalname, mimetype, size, filename, subjectId || null, folderId || null, description || null]
+      [id, userId, uniqueName, originalname, mimetype, size, uniqueName, subjectId || null, folderId || null, description || null]
     );
 
     res.status(201).json(result.rows[0]);
@@ -200,17 +195,13 @@ export const downloadFile = async (req, res) => {
       [fileId]
     );
 
-    // Return file stream
-    const filePath = path.join(UPLOAD_DIR, fileRecord.file_path);
-
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'File not found on disk' });
-    }
-
-    res.download(filePath, fileRecord.original_name);
+    // Download from storage utility (handles both local and R2 streaming)
+    await downloadFileFromStorage(fileRecord.file_path, fileRecord.original_name, res);
   } catch (err) {
     console.error('Download file error:', err);
-    res.status(500).json({ error: 'Failed to download file' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Failed to download file' });
+    }
   }
 };
 
@@ -229,11 +220,8 @@ export const deleteFile = async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
-    // Delete file from disk
-    const filePath = path.join(UPLOAD_DIR, file.rows[0].file_path);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
+    // Delete file from storage (R2 or local disk)
+    await deleteFileFromStorage(file.rows[0].file_path);
 
     // Delete from database
     await pool.query('DELETE FROM files WHERE id = $1', [fileId]);

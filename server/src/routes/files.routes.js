@@ -15,17 +15,8 @@ import {
 
 const router = express.Router();
 
-// Configure multer
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = process.env.FILE_STORAGE_PATH || '/app/uploads';
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(7)}${path.extname(file.originalname)}`;
-    cb(null, uniqueName);
-  },
-});
+// Configure multer to hold files in memory before storing
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,
