@@ -3,6 +3,9 @@ import { useAuthStore } from '../store/auth';
 
 // Trigger build with new Cloudflare environment variables
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+console.log('--- StudySync API URL Debug ---');
+console.log('Raw Env VITE_API_URL:', import.meta.env.VITE_API_URL);
+console.log('Final API_URL used:', API_URL);
 
 const api = axios.create({
   baseURL: `${API_URL}/api`,
