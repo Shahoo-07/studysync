@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useAuthStore } from '../store/auth';
 
+// Trigger build with new Cloudflare environment variables
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 const api = axios.create({
