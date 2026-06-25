@@ -5,19 +5,19 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const UPLOAD_DIR = process.env.FILE_STORAGE_PATH || '/app/uploads';
-
-// Ensure local upload directory exists
-if (!fs.existsSync(UPLOAD_DIR)) {
-  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-}
-
 // Check if Cloudflare R2 is configured
 const isR2Configured = 
   process.env.R2_ACCESS_KEY_ID &&
   process.env.R2_SECRET_ACCESS_KEY &&
   process.env.R2_ENDPOINT &&
   process.env.R2_BUCKET_NAME;
+
+const UPLOAD_DIR = process.env.FILE_STORAGE_PATH || path.join(process.cwd(), 'uploads');
+
+// Ensure local upload directory exists ONLY if R2 is not configured
+if (!isR2Configured && !fs.existsSync(UPLOAD_DIR)) {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
 
 let s3 = null;
 if (isR2Configured) {
